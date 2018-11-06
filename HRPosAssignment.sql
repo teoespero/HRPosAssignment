@@ -2,7 +2,6 @@
 	
 	HRPosAssignment
 	The HRPosAssignment table tracks the details of a position assignment.
-
 */
 
 select 
@@ -13,7 +12,7 @@ from tblDistrict
 
 select 
 	(select DistrictId from tblDistrict) as OrgId,
-	pcd.PositionControlID as PosID,
+	pcd.SlotNum as PosID,
 	null as PrimaryPos,
 	pcd.EmployeeID as EmpId,
 	2018 as FiscalYear,
@@ -22,10 +21,15 @@ select
 	null as AssignmentTypeCode,
 	null as FTEPTW,
 	pcd.FTE as FTEUsed,
-	null as SalarySchedId,
-	null as SalaryRowId,
-	null as SalaryColId,
+	ct.CompType,
+	smg.SalaryMatrixGroupID as SalarySchedId,
+	smg.GroupName,
+	sm.RowNumber as SalaryRowId,
+	sm.ColNumber as SalaryColId,
+	sm.StepColumn,
+	sm.[Value],
 	pcd.pcSlotCalendarID as  CalendarId,
+	cal.CalendarName,
 	null as AllowMiscContrib,
 	pcd.Comments as Comment,
 	null as OASDIEnabled
@@ -35,8 +39,26 @@ inner join
 	on te.EmployeeID = pcd.EmployeeID
 	and te.TerminateDate is null
 	and pcd.InactiveDate is null
+left join 
+	tblSlotCalendarByYear cal
+	on cal.SlotCalendarID = pcd.pcSlotCalendarID
+	and cal.FiscalYear = 2018
+left join
+	tblCompDetails cd
+	on cd.cdPositionControlID = pcd.PositionControlID
+	and cd.FiscalYear = 2018
+	and cd.InactiveDate is null
+left join
+	tblSalaryMatrix sm
+	on sm.SalaryMatrixID = cd.SalaryMatrixID
+left join
+	tblSalaryMatrixGroup smg
+	on smg.SalaryMatrixGroupID = sm.mxGroup
+left join
+	tblSalaryMatrixSeries ser
+	on ser.mxSeriesID = sm.SeriesID
+left join
+	tblCompType ct
+	on cd.CompTypeID = ct.CompTypeID
 order by
-	te.EmployeeID asc, 
-	pcd.PositionControlID asc
-
-
+	pcd.SlotNum asc
